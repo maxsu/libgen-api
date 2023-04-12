@@ -1,87 +1,123 @@
+from operator import attrgetter
 import pytest
-from libgen_api.libgen_search import LibgenSearch
+from libgen_api.factory import (
+    search_title,
+    search_author,
+    search_title_filtered,
+    search_author_filtered,
+)
+from libgen_api.models import Request, Result, MIRROR_SOURCES
 
-title = "Pride and Prejudice"
-author = "Agatha Christie"
 
-ls = LibgenSearch()
+@pytest.fixture
+def pride_and_prejudice():
+    return "Pride and Prejudice"
+
+
+@pytest.fixture
+def agatha_christie():
+    return "Agatha Christie"
+
+
+@pytest.fixture
+def pride_and_prejudice_request(pride_and_prejudice):
+    return Request(
+        query=pride_and_prejudice,
+        search_type="title",
+        num_results=3,
+    )
+
+
+@pytest.fixture
+def agatha_christie_request(agatha_christie):
+    return Request(
+        query=agatha_christie,
+        search_type="author",
+        num_results=3,
+    )
 
 
 class TestBasicSearching:
-    def test_title_search(self):
-        titles = ls.search_title(title)
-        first_result = titles[0]
+    def test_title_search(self, pride_and_prejudice):
+        titles = search_title(pride_and_prejudice)
+        first = titles[0]
 
-        assert title in first_result["Title"]
+        assert pride_and_prejudice in first.title
 
-    def test_author_search(self):
-        titles = ls.search_author(author)
-        first_result = titles[0]
+    def test_author_search(self, agatha_christie):
+        titles = search_author(agatha_christie)
+        first = titles[0]
 
-        assert author in first_result["Author"]
+        assert agatha_christie in first.author
 
-    def test_title_filtering(self):
-        title_filters = {"Year": "2007", "Extension": "epub"}
-        titles = ls.search_title_filtered(title, title_filters, exact_match=True)
-        first_result = titles[0]
-
-        assert (title in first_result["Title"]) & fields_match(title_filters, first_result)
-
-    def test_author_filtering(self):
-        author_filters = {"Language": "German", "Year": "2009"}
-        titles = ls.search_author_filtered(author, author_filters, exact_match=True)
-        first_result = titles[0]
-
-        assert (author in first_result["Author"]) & fields_match(author_filters, first_result)
-
-    # explicit test of exact filtering
-    # should return no results as they will all get filtered out
-    def test_exact_filtering(self):
-        exact_filters = {"Extension": "PDF"}
-        # if exact_match = True, this will filter out all results as
-        # "pdf" is always written lower case on Library Genesis
-        titles = ls.search_author_filtered(author, exact_filters, exact_match=True)
-
-        assert len(titles) == 0
-
-    def test_non_exact_filtering(self):
-        non_exact_filters = {"Extension": "PDF"}
-        titles = ls.search_author_filtered(author, non_exact_filters, exact_match=False)
-        first_result = titles[0]
-
-        assert (author in first_result["Author"]) & fields_match(
-            non_exact_filters, first_result, exact=False
-        )
-
-    def test_non_exact_partial_filtering(self):
-        partial_filters = {"Extension": "p", "Year": "200"}
-        titles = ls.search_title_filtered(title, partial_filters, exact_match=False)
-        first_result = titles[0]
-
-        assert (title in first_result["Title"]) & fields_match(
-            partial_filters, first_result, exact=False
-        )
-
-    def test_exact_partial_filtering(self):
-        exact_partial_filters = {"Extension": "p"}
-        titles = ls.search_title_filtered(title, exact_partial_filters, exact_match=True)
-
-        assert len(titles) == 0
-
-    def test_resolve_download_links(self):
-        titles = ls.search_author(author)
+    def test_resolve_download_links(self, agatha_christie):
+        titles = search_author(agatha_christie)
         title_to_download = titles[0]
-        dl_links = ls.resolve_download_links(title_to_download)
+        dl_links = title_to_download.download_links
 
         # ensure each host is in the results and that they each have a url
-        assert (["GET", "Cloudflare", "IPFS.io"] == list(dl_links.keys())) & (
-            False not in [len(link) > 0 for key, link in dl_links.items()]
-        )
+        assert list(dl_links.keys()) == MIRROR_SOURCES
+        assert all(dl_links.values())
 
     # should return an error if search query is less than 3 characters long
     def test_raise_error_on_short_search(self):
         with pytest.raises(Exception):
-            titles = ls.search_title(title[0:2])
+            titles = search_title(pride_and_prejudice[0:2])
+
+
+class TestFilteredSearching:
+    class TestExactFiltering:
+        def test_title_filtering(self, pride_and_prejudice):
+            title_filters = {"year": "2007", "extension": "epub"}
+            titles = search_title_filtered(pride_and_prejudice, title_filters, exact_match=True)
+            first_result = titles[0]
+
+            assert pride_and_prejudice in first_result.title
+            assert fields_match(title_filters, first_result)
+
+        def test_author_filtering(self, agatha_christie):
+            filters = {"language": "German", "year": "2009"}
+            titles = search_author_filtered(agatha_christie, filters, exact_match=True)
+            first_result = titles[0]
+
+            assert agatha_christie in first_result.author
+            assert fields_match(filters, first_result)
+
+        # explicit test of exact filtering
+        # should return no results as they will all get filtered out
+        def test_exact_filtering(self, agatha_christie):
+            exact_filters = {"xxtension": "PDF"}
+            # if exact_match = True, this will filter out all results as
+            # "pdf" is always written lower case on Library Genesis
+            titles = search_author_filtered(agatha_christie, exact_filters, exact_match=True)
+
+            assert len(titles) == 0
+
+    class TestInexactFiltering:
+        def test_non_exact_filtering(self, agatha_christie):
+            filters = {"Extension": "PDF"}
+            titles = search_author_filtered(agatha_christie, filters, exact_match=False)
+            first_result = titles[0]
+
+            assert agatha_christie in first_result.author
+            assert fields_match(filters, first_result, exact=False)
+
+    class TestPartialFiltering:
+        def test_non_exact_partial_filtering(self, pride_and_prejudice):
+            partial_filters = {"extension": "p", "Year": "200"}
+            titles = search_title_filtered(pride_and_prejudice, partial_filters, exact_match=False)
+            first_result = titles[0]
+
+            assert pride_and_prejudice in first_result.title
+            assert fields_match(partial_filters, first_result, exact=False)
+
+        def test_exact_partial_filtering(self, pride_and_prejudice):
+            exact_partial_filters = {"Extension": "p"}
+            titles = search_title_filtered(
+                pride_and_prejudice, exact_partial_filters, exact_match=True
+            )
+
+            assert len(titles) == 0
 
 
 ####################
@@ -97,14 +133,10 @@ class TestBasicSearching:
 #
 # when exact=False, fields are normalized to lower case,
 # and checked whether filter value is a subset of the response.
-def fields_match(filter_obj, response_obj, exact=True):
-    for key, value in filter_obj.items():
-        if exact is False:
-            value = value.lower()
-            response_obj[key] = response_obj[key].lower()
-            if value not in response_obj[key]:
-                return False
+def fields_match(filter_obj, result: Result, exact=True):
+    items = filter_obj.items()
 
-        elif response_obj[key] != value:
-            return False
-    return True
+    if exact:
+        return all(attrgetter(key)(result) == value for key, value in items)
+    else:
+        return all(value.lower() in attrgetter(key.lower())(result).lower() for key, value in items)
