@@ -12,7 +12,6 @@ from bs4 import BeautifulSoup
 
 
 class SearchRequest:
-
     col_names = [
         "ID",
         "Author",
@@ -46,13 +45,9 @@ class SearchRequest:
     def get_search_page(self):
         query_parsed = "%20".join(self.query.split(" "))
         if self.search_type.lower() == "title":
-            search_url = (
-                f"http://gen.lib.rus.ec/search.php?req={query_parsed}&column=title"
-            )
+            search_url = f"http://gen.lib.rus.ec/search.php?req={query_parsed}&column=title"
         elif self.search_type.lower() == "author":
-            search_url = (
-                f"http://gen.lib.rus.ec/search.php?req={query_parsed}&column=author"
-            )
+            search_url = f"http://gen.lib.rus.ec/search.php?req={query_parsed}&column=author"
         search_page = requests.get(search_url)
         return search_page
 
@@ -72,15 +67,12 @@ class SearchRequest:
         raw_data = [
             [
                 td.a["href"]
-                if td.find("a")
-                and td.find("a").has_attr("title")
-                and td.find("a")["title"] != ""
+                if td.find("a") and td.find("a").has_attr("title") and td.find("a")["title"] != ""
                 else "".join(td.stripped_strings)
                 for td in row.find_all("td")
             ]
-            for row in information_table.find_all("tr")[
-                1:
-            ]  # Skip row 0 as it is the headings row
+            # Skip row 0 as it is the headings row
+            for row in information_table.find_all("tr")[1:]
         ]
 
         output_data = [dict(zip(self.col_names, row)) for row in raw_data]

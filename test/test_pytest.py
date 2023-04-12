@@ -25,18 +25,14 @@ class TestBasicSearching:
         titles = ls.search_title_filtered(title, title_filters, exact_match=True)
         first_result = titles[0]
 
-        assert (title in first_result["Title"]) & fields_match(
-            title_filters, first_result
-        )
+        assert (title in first_result["Title"]) & fields_match(title_filters, first_result)
 
     def test_author_filtering(self):
         author_filters = {"Language": "German", "Year": "2009"}
         titles = ls.search_author_filtered(author, author_filters, exact_match=True)
         first_result = titles[0]
 
-        assert (author in first_result["Author"]) & fields_match(
-            author_filters, first_result
-        )
+        assert (author in first_result["Author"]) & fields_match(author_filters, first_result)
 
     # explicit test of exact filtering
     # should return no results as they will all get filtered out
@@ -68,9 +64,7 @@ class TestBasicSearching:
 
     def test_exact_partial_filtering(self):
         exact_partial_filters = {"Extension": "p"}
-        titles = ls.search_title_filtered(
-            title, exact_partial_filters, exact_match=True
-        )
+        titles = ls.search_title_filtered(title, exact_partial_filters, exact_match=True)
 
         assert len(titles) == 0
 
@@ -89,9 +83,11 @@ class TestBasicSearching:
         with pytest.raises(Exception):
             titles = ls.search_title(title[0:2])
 
+
 ####################
 # Helper Functions #
 ####################
+
 
 # Check object fields for equality -
 # -> Returns True if they match.
@@ -103,7 +99,6 @@ class TestBasicSearching:
 # and checked whether filter value is a subset of the response.
 def fields_match(filter_obj, response_obj, exact=True):
     for key, value in filter_obj.items():
-
         if exact is False:
             value = value.lower()
             response_obj[key] = response_obj[key].lower()
