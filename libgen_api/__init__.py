@@ -1,4 +1,4 @@
-from .search import search, Request, Result
+from .search import search, Request, Results
 from .factory import (
     search_title,
     search_author,
