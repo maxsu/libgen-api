@@ -5,9 +5,10 @@ from libgen_api.factory import (
     search_title_filtered,
     search_author_filtered,
 )
-from libgen_api.models import Request, Result, MIRROR_SOURCES
+from libgen_api.models import MIRROR_SOURCES
 
-from . import title, title_request, author, author_request, short_search, Filters, fields_match
+from .fixtures import title, author, short_search
+from .helpers import fields_match
 
 
 class TestBasicSearching:

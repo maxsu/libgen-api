@@ -1,9 +1,9 @@
 import pytest
 
-from libgen_api.models import Request, Result, Results, MIRROR_SOURCES
-from libgen_api.search import search
+from libgen_api.search import search, Request, Results
+from libgen_api.models import MIRROR_SOURCES
 
-from . import (
+from .fixtures import (
     author,
     author_request,
     author_results,
@@ -11,9 +11,10 @@ from . import (
     title_request,
     title_results,
     short_search,
-    Filters,
-    fields_match,
 )
+
+
+from .helpers import Filters, fields_match
 
 
 class TestBasicSearching:
