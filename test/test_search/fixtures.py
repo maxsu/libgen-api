@@ -15,6 +15,21 @@ def author():
 
 
 @pytest.fixture
+def long_request():
+    return Request(
+        query="test",
+        search_type="title",
+        num_results=300,
+        results_per_page=100,
+    )
+
+
+@pytest.fixture
+def long_result(long_request):
+    return search(long_request)
+
+
+@pytest.fixture
 def title_request(title):
     return Request(
         query=title,
@@ -46,3 +61,8 @@ def author_results(author_request: Request):
 @pytest.fixture
 def title_results(title_request: Request):
     return search(title_request)
+
+
+@pytest.fixture
+def results_length_invariant():
+    ...

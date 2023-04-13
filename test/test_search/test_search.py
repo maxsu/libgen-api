@@ -11,6 +11,8 @@ from .fixtures import (
     title_request,
     title_results,
     short_search,
+    long_request,
+    long_result,
 )
 
 
@@ -90,3 +92,14 @@ class TestResultFiltering:
             titles = title_results.filter(Filters.partial_exact, exact_match=True)
 
             assert len(titles) == 0
+
+    class TestLongSearch:
+        def test_3_page_search_returns_300_results(
+            self, long_request: Request, long_result: Results
+        ):
+            assert len(long_result) == long_request.num_results
+
+        def test_use_fetch_all_to_get_65_results(self, title_request: Request):
+            title_request.num_results = -1
+            results = search(title_request)
+            assert len(results) == 65

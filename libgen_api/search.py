@@ -43,17 +43,11 @@ def search(request: Request) -> Results:
         page_results = scrape(search_page)
         results += page_results
 
-        results_meet_request_max = len(results) >= request.num_results
+        results_mismatch = len(page_results) != page_results.page_max - page_results.page_min + 1
+        results_meet_request_max = len(results) >= request.num_results and request.num_results != -1
         results_meet_page_max = len(results) == page_results.max_num
         results_exceed_page_max = len(results) > page_results.max_num
-        results_mismatch = len(results) != page_results.page_max - page_results.page_min + 1
         # todo: Warn the user if we exceeded / mismatch
-
-        if results_meet_request_max:
-            break
-
-        if not results or results_meet_page_max:
-            break
 
         if results_exceed_page_max:
             raise Exception("Results exceeded page max")
@@ -61,6 +55,9 @@ def search(request: Request) -> Results:
         if results_mismatch:
             raise Exception("Results mismatch")
 
-        request.page += 1
+        if not results or results_meet_page_max or results_meet_request_max:
+            break
+
+        request.fetch_page += 1
 
     return results

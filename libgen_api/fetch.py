@@ -39,8 +39,8 @@ def fetch(request: Request) -> Page:
     query_parsed = "+".join(request.query.split(" "))
     url_opts = {
         "req": query_parsed,
-        "res": request.num_results,
-        "page": request.page,
+        "res": request.results_per_page,
+        "page": request.fetch_page,
         "column": "title" if request.search_type == "title" else "author",
     }
     search_url = LIBGEN_URL + urlencode(url_opts)
